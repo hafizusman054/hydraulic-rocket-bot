@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Hydraulic Rocket Voice Bot</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;padding:18px;line-height:1.4}
+  h2{margin:0 0 10px}
+  #out{margin-top:12px;padding:10px;border:1px solid #ddd;border-radius:6px;min-height:48px}
+  .btn{display:inline-block;padding:8px 12px;border-radius:6px;background:#0b79d0;color:#fff;text-decoration:none;cursor:pointer}
+  small{color:#555}
+</style>
+</head>
+<body>
+  <h2>Hydraulic Rocket — Voice Q&A</h2>
+  <div>
+    <button class="btn" onclick="startRec()">🎤 Start Voice Question</button>
+    <button class="btn" onclick="showFAQ()" style="margin-left:8px;background:#4CAF50">❓ Show Keywords</button>
+    <div style="margin-top:8px"><small>Tip: Use Chrome on Android for best Web Speech support.</small></div>
+  </div>
+
+  <div id="out">Press Start and ask e.g. "What is hydraulic rocket?" or "Hydraulic rocket kya hota hai?"</div>
+
+<script>
+/* ====== Q/A dictionary (Urdu + English short replies) ====== */
+const FAQ = {
+  "hydraulic rocket":"Hydraulic rocket: a model that uses water and built-up pressure to make thrust.",
+  "hydraulic rocket kya":"Hydraulic rocket: pani aur pressure se chalne wala model hota hai.",
+  "what is hydraulic rocket":"A small model that uses water and pressure to produce thrust.",
+  "how it works":"Pump builds pressure; water is forced out creating upward thrust.",
+  "how hydraulic works":"Pump builds pressure; water ejects creating thrust.",
+  "materials":"Plastic bottle, cork/nozzle, pipe, foot-pump, water, launch stand.",
+  "safety":"Keep distance, wear safety goggles and never stand above the rocket.",
+  "hydraulic system":"A system that uses fluid pressure to transfer and multiply force.",
+  "pressure kaise banta":"Pump chalane se bottle ke andar pressure barhta hai.",
+  "best water level":"Bottle ka takriban 1/3 paani bharna acha hota hai.",
+  "nozzle":"Nozzle pani ko tez nikalne deta hai; chhota nozzle zyada speed deta hai.",
+  "thrust kya hai":"Thrust wo force hai jo rocket ko upar push karti hai.",
+  "force kya hoti":"Force kisi object ko move karne ki quwwat hoti hai.",
+  "air vs water":"Air pressure builds up; water acts as reaction mass that provides thrust.",
+  "improve height":"Optimize nozzle, reduce weight, make seal tight and tune water level.",
+  "common mistakes":"Zyada pressure, loose cork, ya galat nozzle design khatarnaak ho sakte hain.",
+  "troubleshoot leak":"Connections tight karein; cork aur tape check karein.",
+  "demo steps":"1) Stand set 2) 1/3 water 3) cork fit 4) pump 5) release",
+  "measurement":"Measure airtime and estimate height; record for comparison."
+};
+
+/* find answer by checking keywords in user speech */
+function findAnswer(q) {
+  q = (q||"").toLowerCase();
+  for (let k in FAQ) {
+    if (q.includes(k)) return FAQ[k];
+  }
+  return "Maaf kijiye — iska jawab mojood nahin. Try another question like 'materials' or 'safety'.";
+}
+
+function speakText(t) {
+  try {
+    const u = new SpeechSynthesisUtterance(t);
+    window.speechSynthesis.cancel(); // stop previous
+    window.speechSynthesis.speak(u);
+  } catch(e) { console.log("TTS error", e); }
+}
+
+function showFAQ(){
+  const keys = Object.keys(FAQ).slice(0,20);
+  document.getElementById('out').innerHTML = "<b>Try these keywords:</b><br>"+keys.join(", ");
+}
+
+/* ====== Voice recognition ======
+   Uses Web Speech API (webkitSpeechRecognition) — works best in Chrome on Android/PC.
+   If not supported, show a message.
+*/
+function startRec(){
+  const out = document.getElementById('out');
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    out.innerHTML = "Speech recognition not supported in this browser. Use Chrome on Android or Chrome on Desktop.";
+    return;
+  }
+  const rec = new SpeechRecognition();
+  rec.lang = 'en-US'; // default; detection uses keywords in both English & Urdu text
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+  out.innerHTML = "Listening… please speak now.";
+  rec.onresult = function(evt){
+    const text = evt.results[0][0].transcript;
+    const ans = findAnswer(text);
+    out.innerHTML = "<b>You:</b> " + text + "<br><b>Bot:</b> " + ans;
+    speakText(ans);
+  };
+  rec.onerror = function(e){
+    out.innerHTML = "Recognition error: " + (e.error || e.message);
+  };
+  rec.onend = function(){ /* nothing */ };
+  try { rec.start(); } catch(e){ out.innerHTML = "Could not start microphone. Allow mic permission and try again."; }
+}
+</script>
+</body>
+</html>
